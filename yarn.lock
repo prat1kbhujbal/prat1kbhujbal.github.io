@@ -6041,7 +6041,7 @@ gatsby-plugin-robots-txt@^1.5.6:
     "@babel/runtime" "^7.11.2"
     generate-robotstxt "^8.0.3"
 
-gatsby-plugin-sharp@^3.14.3:
+gatsby-plugin-sharp@^3.4.1:
   version "3.14.3"
   resolved "https://registry.yarnpkg.com/gatsby-plugin-sharp/-/gatsby-plugin-sharp-3.14.3.tgz#3db33ddfb2b83365ee2314eaaee6d1ceed046032"
   integrity sha512-96H2HxJe4EHjnwp3Qn2LoKoPwciMf5TXwir9h9QR/+fTqld0OhU5Q4PjWciELmGXW7AzXKpSoTvRmA322kgPhg==
@@ -6075,12 +6075,12 @@ gatsby-plugin-sitemap@^4.0.0:
     minimatch "^3.0.4"
     sitemap "^6.3.0"
 
-gatsby-plugin-styled-components@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.npmjs.org/gatsby-plugin-styled-components/-/gatsby-plugin-styled-components-4.4.0.tgz#c647f888899ca1ef887fd73cdb596e2dd0205e5d"
-  integrity sha512-Kc0IO98ASTFUjbmB8elyGds2oMguc0tZsxlpZdC5K8SA/CdZsubKoz//Q7TVgzsTsDO6LKo7KHhCn/MutAyqJg==
+gatsby-plugin-styled-components@^4.14.0:
+  version "4.14.0"
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-styled-components/-/gatsby-plugin-styled-components-4.14.0.tgz#2a90694cbf502c674933c022a7d1003f1e2cd08f"
+  integrity sha512-sDyF/27G9Yh/xE8EdWqneCESlMc11AU/RK+vSF2SdQtp09sSCmRvB8CJYX9cWtNjAw7AnEyoXj1h9gSdkbvXdg==
   dependencies:
-    "@babel/runtime" "^7.12.5"
+    "@babel/runtime" "^7.15.4"
 
 gatsby-plugin-typescript@^3.4.0:
   version "3.4.0"
@@ -9248,12 +9248,7 @@ minimist-options@4.1.0:
     is-plain-obj "^1.1.0"
     kind-of "^6.0.3"
 
-minimist@^1.1.0, minimist@^1.2.0, minimist@^1.2.3, minimist@^1.2.5:
-  version "1.2.6"
-  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
-  integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
-
-minimist@^1.2.6:
+minimist@^1.1.0, minimist@^1.2.0, minimist@^1.2.3, minimist@^1.2.5, minimist@^1.2.6:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
   integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
