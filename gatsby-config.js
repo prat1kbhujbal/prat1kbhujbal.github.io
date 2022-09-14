@@ -7,7 +7,7 @@ module.exports = {
             ' ',
         siteUrl: 'https://prat1kbhujbal.github.io',
         image: '/images/og.png',
-        twitterUsername: '@',
+        twitterUsername: '@ ',
     },
     plugins: [
         `gatsby-plugin-react-helmet`,
