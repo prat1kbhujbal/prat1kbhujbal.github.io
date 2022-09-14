@@ -1,8 +1,8 @@
 {
-    "name": "v1.1",
+    "name": "v1",
     "homepage": "http://prat1kbhujbal.github.io",
     "description": "Personal Website ",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "author": "Pratik Bhujbal <pbhujbal@umd.edu>",
     "keywords": [
         "gatsby"
@@ -17,6 +17,7 @@
         "serve": "gatsby serve",
         "clean": "gatsby clean",
         "predeploy": "npm run build",
+        "deploy": "gatsby build && gh-pages -b main -d public -m 'auto deploy github' -u 'Pratik Bhujbal <bhujbalpratik97@gmail.com>'",
         "audit:fix": "npx yarn-audit-fix"
     },
     "husky": {
