@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://prat1kbhujbal.github.io/sitemap.xml
+Host: https://prat1kbhujbal.github.io
