@@ -17,7 +17,7 @@
         "serve": "gatsby serve",
         "clean": "gatsby clean",
         "predeploy": "npm run build",
-        "deploy": "gatsby build && gh-pages -b main -d public -m 'auto deploy github' -u 'Pratik Bhujbal <bhujbalpratik97@gmail.com>'",
+        "deploy": "gatsby build && gh-pages -b main -d public -m 'auto deploy github' -u 'Pratik Bhujbal <55290437+prat1kbhujbal@users.noreply.github.com>'",
         "audit:fix": "npx yarn-audit-fix"
     },
     "husky": {
