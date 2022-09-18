@@ -2,7 +2,7 @@ name: Deploy Website 🚀
 on:
   push:
     branches:
-      - src # Change the branch name to your main one in which source code is there 
+      - src
 jobs:
   Build-N-Deploy:
     concurrency: ci-${{ github.ref }}
