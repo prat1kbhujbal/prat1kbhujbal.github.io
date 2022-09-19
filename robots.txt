@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://prat1kbhujbal.github.io/sitemap.xml
+Sitemap: https://prat1kbhujbal.github.io/sitemap/sitemap-index.xml
 Host: https://prat1kbhujbal.github.io
