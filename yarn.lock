@@ -6085,13 +6085,13 @@ gatsby-plugin-sitemap@^4.0.0:
     common-tags "^1.8.0"
     minimatch "^3.0.4"
     sitemap "^6.3.0"
-    
-gatsby-plugin-styled-components@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.npmjs.org/gatsby-plugin-styled-components/-/gatsby-plugin-styled-components-4.4.0.tgz#c647f888899ca1ef887fd73cdb596e2dd0205e5d"
-  integrity sha512-Kc0IO98ASTFUjbmB8elyGds2oMguc0tZsxlpZdC5K8SA/CdZsubKoz//Q7TVgzsTsDO6LKo7KHhCn/MutAyqJg==
+
+gatsby-plugin-styled-components@^4.14.0:
+  version "4.14.0"
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-styled-components/-/gatsby-plugin-styled-components-4.14.0.tgz#2a90694cbf502c674933c022a7d1003f1e2cd08f"
+  integrity sha512-sDyF/27G9Yh/xE8EdWqneCESlMc11AU/RK+vSF2SdQtp09sSCmRvB8CJYX9cWtNjAw7AnEyoXj1h9gSdkbvXdg==
   dependencies:
-    "@babel/runtime" "^7.12.5"
+    "@babel/runtime" "^7.15.4"
 
 gatsby-plugin-typescript@^3.4.0:
   version "3.4.0"
@@ -6220,12 +6220,12 @@ gatsby-remark-images@^5.11.0:
     unist-util-select "^3.0.4"
     unist-util-visit-parents "^3.1.1"
 
-gatsby-remark-prismjs@^5.1.0:
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/gatsby-remark-prismjs/-/gatsby-remark-prismjs-5.1.0.tgz#1c0ad938d453e9c75955c920e398ac96be2eee52"
-  integrity sha512-Gx5v3dJ1LEbL+PQ3C0ExIwcUicDFwIJ9cv4aale8PZrlpQyfx6Z5N4NRaN2t+Vherhidm+Ygy6zJEqI20yds+Q==
+gatsby-remark-prismjs@^5.11.0:
+  version "5.11.0"
+  resolved "https://registry.yarnpkg.com/gatsby-remark-prismjs/-/gatsby-remark-prismjs-5.11.0.tgz#ca823b7b5def06a5b4d33e8d8e2e1126451f6b3f"
+  integrity sha512-WrS074GqW0st5chlYxTrFxLZLjAubWvNdw23DYW8qcaAfnH527hmgEDQgynjVnkSxhxbhnhTqT5MYWBdTBLk5A==
   dependencies:
-    "@babel/runtime" "^7.12.5"
+    "@babel/runtime" "^7.15.4"
     parse-numeric-range "^1.2.0"
     unist-util-visit "^2.0.3"
 
