@@ -1,7 +1,7 @@
 ---
 date: '3'
 title: 'Particle Filter based Localization'
-cover: 'result.png'
+cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/Particle-Filter-Based-Localization'
 tech:
   - Matlab

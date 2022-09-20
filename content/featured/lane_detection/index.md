@@ -1,7 +1,7 @@
 ---
 date: '2'
 title: 'Lane detection and Turn prediction'
-cover: 'result.webp'
+cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/Lane_Detection_and_Turn_Prediction'
 tech:
   - Python

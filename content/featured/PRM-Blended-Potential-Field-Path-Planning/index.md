@@ -1,7 +1,7 @@
 ---
 date: '1'
 title: 'PRM-Blended-PF-Path-Planning'
-cover: 'final_output.png'
+cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/PRM-Blended-Potential-Field-Path-Planning'
 tech:
   - C++
