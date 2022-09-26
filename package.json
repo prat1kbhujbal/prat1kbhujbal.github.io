@@ -67,7 +67,7 @@
         "@babel/core": "^7.19.0",
         "@babel/eslint-parser": "^7.19.1",
         "@babel/preset-react": "^7.13.13",
-        "@upstatement/eslint-config": "^1.0.0",
+        "@upstatement/eslint-config": "^1.0.1",
         "@upstatement/prettier-config": "^1.0.0",
         "babel-preset-gatsby": "^1.4.0",
         "deploy-to-github-pages": "^1.0.1",
