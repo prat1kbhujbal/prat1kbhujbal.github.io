@@ -11,10 +11,6 @@ module.exports = {
             name: 'GitHub',
             url: 'https://github.com/prat1kbhujbal',
         },
-        {
-            name: 'Instagram',
-            url: 'https://www.instagram.com/pratik_bhujbal_',
-        },
 
     ],
 
