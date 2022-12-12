@@ -3100,18 +3100,13 @@ babel-plugin-polyfill-regenerator@^0.4.1:
   dependencies:
     "@babel/helper-define-polyfill-provider" "^0.3.3"
 
-babel-plugin-remove-graphql-queries@^3.14.0:
-  version "3.14.0"
-  resolved "https://registry.yarnpkg.com/babel-plugin-remove-graphql-queries/-/babel-plugin-remove-graphql-queries-3.14.0.tgz#33b607cbc2824f72aa3d3b68f52912bf295b79c7"
-  integrity sha512-uRqbsHOcJ1kWn6IK6clZOGHBnQCddiz1LuoGIpv/hcGZCO1nCy16z9KMgEM8TdGG6L6cO31mNr1RcVmvGtcCEw==
+babel-plugin-remove-graphql-queries@^3.15.0, babel-plugin-remove-graphql-queries@^3.4.0:
+  version "3.15.0"
+  resolved "https://registry.yarnpkg.com/babel-plugin-remove-graphql-queries/-/babel-plugin-remove-graphql-queries-3.15.0.tgz#0f9802ce6eeabd877f6b166da01222f3911228ff"
+  integrity sha512-b3cjrV3Q2UYCHtH/nBtOdbkcDiPlj85XCKIn4qc+vMojbLjOLNdkZoADiBH9vayhKPg8q5SA2wppuXzr6jufqQ==
   dependencies:
     "@babel/runtime" "^7.15.4"
-    gatsby-core-utils "^2.14.0"
-
-babel-plugin-remove-graphql-queries@^3.4.0:
-  version "3.4.0"
-  resolved "https://registry.npmjs.org/babel-plugin-remove-graphql-queries/-/babel-plugin-remove-graphql-queries-3.4.0.tgz#81c3e604fb38ad8a8da82ec1c47e509acf2ff83f"
-  integrity sha512-ADn0az4QeBIvvz18kByGv9Q7xUyYKPCNFISt3THiqPrYejj1zrk7BW/End47g2Iav1Q9SrX2GdPxaiz/svSn3A==
+    gatsby-core-utils "^2.15.0"
 
 "babel-plugin-styled-components@>= 1.12.0", babel-plugin-styled-components@^2.0.7:
   version "2.0.7"
@@ -6309,22 +6304,22 @@ gatsby-plugin-google-analytics@^3.15.0:
     minimatch "3.0.4"
     web-vitals "^1.1.2"
 
-gatsby-plugin-image@^1.14.2:
-  version "1.14.2"
-  resolved "https://registry.yarnpkg.com/gatsby-plugin-image/-/gatsby-plugin-image-1.14.2.tgz#3955e370d8eb96cd3675001220f315a66ad8ea06"
-  integrity sha512-5kw7sAjqrNfMz7E1oMVfOz4CrG6AtIQNYVl1jTAI9sAuTLz/EJEHOM2z54pFUk/irNkrhXDZyEnDjY2d06U7rQ==
+gatsby-plugin-image@^1.15.0:
+  version "1.15.0"
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-image/-/gatsby-plugin-image-1.15.0.tgz#0edca8b0b400a28d07c3dda3eb97f3bc73ed478b"
+  integrity sha512-hqPfu2jxLulBizN9okPo5sdKe4l5OvP9NsJ5n4F30SLpXFVvkkV7RAWv/3ZU+ZV/znYFdSqsJtUchUH6BpCzug==
   dependencies:
     "@babel/code-frame" "^7.14.0"
     "@babel/parser" "^7.15.5"
     "@babel/runtime" "^7.15.4"
     "@babel/traverse" "^7.15.4"
     babel-jsx-utils "^1.1.0"
-    babel-plugin-remove-graphql-queries "^3.14.0"
+    babel-plugin-remove-graphql-queries "^3.15.0"
     camelcase "^5.3.1"
     chokidar "^3.5.2"
     common-tags "^1.8.0"
     fs-extra "^10.0.0"
-    gatsby-core-utils "^2.14.0"
+    gatsby-core-utils "^2.15.0"
     objectFitPolyfill "^2.3.5"
     prop-types "^15.7.2"
 
