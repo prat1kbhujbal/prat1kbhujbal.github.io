@@ -2,7 +2,7 @@
 date: '1'
 title: 'Socially-aware-navigation'
 cover: 'out2.png'
-github: 'https://github.com/prat1kbhujbal/PRM-Blended-Potential-Field-Path-Planning'
+github: 'https://github.com/prat1kbhujbal/Socially-aware-navigation.git'
 tech:
   - TensorFlow
   - ROS
