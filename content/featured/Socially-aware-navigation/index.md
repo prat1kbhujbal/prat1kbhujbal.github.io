@@ -8,4 +8,4 @@ tech:
   - ROS
   - Python
 ---
-Human pose estimation using deep learning method to predict trajectory-based intent from historical human poses using Kalman filter and utilize these predictions for socially aware navigation.
+Human pose estimation using deep learning method to predict trajectory-based intent from historical human poses using Kalman filter and utilize these predictions for socially aware navigation. 
