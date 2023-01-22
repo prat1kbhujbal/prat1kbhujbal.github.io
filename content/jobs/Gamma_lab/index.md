@@ -3,7 +3,7 @@ date: '2022-05-01'
 title: 'Graduate Research Assistant'
 company: 'Gamma Lab'
 location: 'University of Maryland'
-range: 'May 2022 - Aug 2022'
+range: 'May 2022 - Jun 2022'
 url: 'https://gamma.umd.edu/'
 ---
 

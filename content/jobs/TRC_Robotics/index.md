@@ -8,9 +8,7 @@ url: 'https://trcrobotics.com/'
 ---
 
 - Implemented Navigation stack using behavior tree to specify complex robot behaviors for a restaurant based application.
-- Developed a custom local planner plugin in C++ and integrated it with move base, which supports holonomic and differential
-robots.
+- Developed a custom local planner plugin in C++ and integrated it with move base, which supports holonomic and differential robots.
 - Implemented a differential drive controller to navigate through waypoints.
-- Developed a grafana plugin that uploads the robot’s 3D world and loads it into Gazebo/GzWeb, which is also used to control it
-with a manual override and to schedule a job.
+- Developed a grafana plugin that uploads the robot’s 3D world and loads it into Gazebo/GzWeb, which is also used to control it with a manual override and to schedule a job.
 - Created test procedures using gtest and rostest.
