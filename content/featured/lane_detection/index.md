@@ -1,5 +1,5 @@
 ---
-date: '2'
+date: '3'
 title: 'Lane detection and Turn prediction'
 cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/Lane_Detection_and_Turn_Prediction'

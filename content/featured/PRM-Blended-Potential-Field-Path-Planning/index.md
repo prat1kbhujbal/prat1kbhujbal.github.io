@@ -1,5 +1,5 @@
 ---
-date: '1'
+date: '2'
 title: 'PRM-Blended-PF-Path-Planning'
 cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/PRM-Blended-Potential-Field-Path-Planning'
