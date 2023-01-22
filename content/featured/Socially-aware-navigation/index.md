@@ -2,7 +2,7 @@
 date: '1'
 title: 'Socially-aware-navigation'
 cover: 'out2.png'
-github: 'https://github.com/prat1kbhujbal/Socially-aware-navigation.git'
+github: 'https://github.com/prat1kbhujbal/Socially-aware-navigation'
 tech:
   - TensorFlow
   - ROS
