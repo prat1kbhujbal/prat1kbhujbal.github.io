@@ -2348,12 +2348,12 @@
   resolved "https://registry.yarnpkg.com/@upstatement/eslint-config/-/eslint-config-1.0.1.tgz#e650f5807a02f89d07b558b1d3dc951fb871b37e"
   integrity sha512-aJe5n2+IzNwppYVmsgKs1YpZE5ewrUY2YxN706Xpq8y8kPORsOqfDzy0KsunET8JnLJ/mCZqJOCzUN4+jmGtwQ==
 
-"@upstatement/prettier-config@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@upstatement/prettier-config/-/prettier-config-0.3.0.tgz#cf34332dfba90c7586cd0bde134b7fc771163323"
-  integrity sha512-/DCKpd5tsgZ7Mshb7MSLdFkPRXHxZhzEKJP9ZW58ix0ARw1nbrcdbyiovHEutiQqmh4OjdLJjIAJ2MVUiEaB+Q==
+"@upstatement/prettier-config@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@upstatement/prettier-config/-/prettier-config-1.0.0.tgz#58ab1dc0cf68925e1cc7ad657ee02fc1866d675c"
+  integrity sha512-Sj6DWb+jKOoMNIPmdSbY+6xEk1GU8Zq46haHcMa0G/Qv/QbGBr9CWyBW00oo2/68a1kXHhiiOaUdYP13QIg2Pw==
   dependencies:
-    prettier "^1.x.x"
+    prettier "^2.x.x"
 
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
@@ -12976,15 +12976,10 @@ prepend-http@^2.0.0:
   resolved "https://registry.yarnpkg.com/prepend-http/-/prepend-http-2.0.0.tgz#e92434bfa5ea8c19f41cdfd401d741a3c819d897"
   integrity sha1-6SQ0v6XqjBn0HN/UAddBo8gZ2Jc=
 
-prettier@^1.x.x:
-  version "1.19.1"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.19.1.tgz#f7d7f5ff8a9cd872a7be4ca142095956a60797cb"
-  integrity sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==
-
-prettier@^2.0.5, prettier@^2.7.1:
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.7.1.tgz#e235806850d057f97bb08368a4f7d899f7760c64"
-  integrity sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==
+prettier@^2.0.5, prettier@^2.7.1, prettier@^2.x.x:
+  version "2.8.7"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.8.7.tgz#bb79fc8729308549d28fe3a98fce73d2c0656450"
+  integrity sha512-yPngTo3aXUUmyuTjeTUT75txrf+aMh9FiD7q9ZE/i6r0bPb22g4FsE6Y338PQX1bmfy08i9QQCB7/rcUAVntfw==
 
 pretty-bytes@^5.1.0, pretty-bytes@^5.4.1:
   version "5.6.0"
