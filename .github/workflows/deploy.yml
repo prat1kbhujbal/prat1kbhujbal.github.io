@@ -11,19 +11,6 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      - name: Get Yarn Cache 🔓 # To get yarn cache path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Cache Dependencies 🔒 # To cache yarn dependencies
-        uses: actions/cache@v3
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
       - name: Set URL 🔗 # To set repo URL to avoid errors like https://github.com/adithyaakrishna/adithyaakrishna.github.io/issues/83
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
