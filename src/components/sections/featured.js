@@ -287,12 +287,27 @@ const StyledProject = styled.li`
         mix-blend-mode: screen;
       }
     }
-
+    .video-wrapper {
+        position: relative;
+        padding-bottom: 56.25%; /* for 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+      }
+      
+      .video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
     .img {
       border-radius: var(--border-radius);
       mix-blend-mode: multiply;
       filter: grayscale(100%) contrast(1) brightness(90%);
-
+      object-fit: cover; 
+      width: 100%; 
+      height: 100%; 
       @media (max-width: 768px) {
         object-fit: cover;
         width: auto;
@@ -305,30 +320,33 @@ const StyledProject = styled.li`
 
 const Featured = () => {
     const data = useStaticQuery(graphql`
-    {
-      featured: allMarkdownRemark(
-        filter: { fileAbsolutePath: { regex: "/content/featured/" } }
-        sort: { fields: [frontmatter___date], order: ASC }
-      ) {
-        edges {
-          node {
-            frontmatter {
-              title
-              cover {
-                childImageSharp {
-                  gatsbyImageData(width: 700, placeholder: BLURRED, formats: [AUTO, WEBP, AVIF])
-                }
-              }
-              tech
-              github
-              external
+{
+  featured: allMarkdownRemark(
+    filter: { fileAbsolutePath: { regex: "/content/featured/" } }
+    sort: { fields: [frontmatter___date], order: ASC }
+  ) {
+    edges {
+      node {
+        frontmatter {
+          title
+          cover {
+            childImageSharp {
+              gatsbyImageData(width: 700, placeholder: BLURRED, formats: [AUTO, WEBP, AVIF])
             }
-            html
+          }
+          tech
+          github
+          external
+          video {
+            publicURL
           }
         }
+        html
       }
     }
-  `);
+  }
+}
+`);
 
     const featuredProjects = data.featured.edges.filter(({ node }) => node);
     const revealTitle = useRef(null);
@@ -354,7 +372,7 @@ const Featured = () => {
                 {featuredProjects &&
                     featuredProjects.map(({ node }, i) => {
                         const { frontmatter, html } = node;
-                        const { external, title, tech, github, cover, cta } = frontmatter;
+                        const { external, title, tech, github, cover, cta, video } = frontmatter;
                         const image = getImage(cover);
 
                         return (
@@ -402,7 +420,16 @@ const Featured = () => {
 
                                 <div className="project-image">
                                     <a href={external ? external : github ? github : '#'}>
-                                        <GatsbyImage image={image} alt={title} className="img" />
+                                        {video ? (
+                                            <div className="video-wrapper">
+                                                <video className="video img" autoPlay muted loop>
+                                                    <source src={video.publicURL} type="video/mp4" />
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </div>
+                                        ) : (
+                                            <GatsbyImage image={image} alt={title} className="img" />
+                                        )}
                                     </a>
                                 </div>
                             </StyledProject>

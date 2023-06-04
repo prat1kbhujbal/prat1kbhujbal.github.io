@@ -1,8 +1,9 @@
 ---
-date: '2'
+date: '3'
 title: 'PRM-Blended-PF-Path-Planning'
 cover: 'output.png'
 github: 'https://github.com/prat1kbhujbal/PRM-Blended-Potential-Field-Path-Planning'
+video: "result.mp4"
 tech:
   - C++
   - ROS

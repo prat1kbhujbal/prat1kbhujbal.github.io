@@ -28,8 +28,8 @@ module.exports = {
             url: '/#projects',
         },
         {
-            name: 'Contact',
-            url: '/#contact',
+            name: 'Robots',
+            url: '/#robots',
         },
     ],
 
