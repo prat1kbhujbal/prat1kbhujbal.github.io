@@ -3,7 +3,6 @@ date: '2'
 title: 'Socially-aware-navigation'
 cover: 'out2.png'
 github: 'https://github.com/prat1kbhujbal/Socially-aware-navigation'
-# video: "result.mp4"
 tech:
   - TensorFlow
   - ROS
