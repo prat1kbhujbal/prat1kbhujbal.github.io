@@ -130,114 +130,114 @@ const StyledTableContainer = styled.div`
 `;
 
 const ArchivePage = ({ location, data }) => {
-  const projects = data.allMarkdownRemark.edges;
-  const revealTitle = useRef(null);
-  const revealTable = useRef(null);
-  const revealProjects = useRef([]);
-  const prefersReducedMotion = usePrefersReducedMotion();
+    const projects = data.allMarkdownRemark.edges;
+    const revealTitle = useRef(null);
+    const revealTable = useRef(null);
+    const revealProjects = useRef([]);
+    const prefersReducedMotion = usePrefersReducedMotion();
 
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      return;
-    }
+    useEffect(() => {
+        if (prefersReducedMotion) {
+            return;
+        }
 
-    sr.reveal(revealTitle.current, srConfig());
-    sr.reveal(revealTable.current, srConfig(200, 0));
-    revealProjects.current.forEach((ref, i) => sr.reveal(ref, srConfig(i * 10)));
-  }, []);
+        sr.reveal(revealTitle.current, srConfig());
+        sr.reveal(revealTable.current, srConfig(200, 0));
+        revealProjects.current.forEach((ref, i) => sr.reveal(ref, srConfig(i * 10)));
+    }, []);
 
-  return (
-    <Layout location={location}>
-      <Helmet title="Archive" />
+    return (
+        <Layout location={location}>
+            <Helmet title="Archive" />
 
-      <main>
-        <header ref={revealTitle}>
-          <h1 className="big-heading">Archive</h1>
-          <p className="subtitle">A big list of things I’ve worked on</p>
-        </header>
+            <main>
+                <header ref={revealTitle}>
+                    <h1 className="big-heading">Archive</h1>
+                    <p className="subtitle">A list of things I’ve worked on</p>
+                </header>
 
-        <StyledTableContainer ref={revealTable}>
-          <table>
-            <thead>
-              <tr>
-                <th>Year</th>
-                <th>Title</th>
-                <th className="hide-on-mobile">Made at</th>
-                <th className="hide-on-mobile">Built with</th>
-                <th>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.length > 0 &&
-                projects.map(({ node }, i) => {
-                  const {
-                    date,
-                    github,
-                    external,
-                    ios,
-                    android,
-                    title,
-                    tech,
-                    company,
-                  } = node.frontmatter;
-                  return (
-                    <tr key={i} ref={el => (revealProjects.current[i] = el)}>
-                      <td className="overline year">{`${new Date(date).getFullYear()}`}</td>
+                <StyledTableContainer ref={revealTable}>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Title</th>
+                                <th className="hide-on-mobile">Made at</th>
+                                <th className="hide-on-mobile">Built with</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {projects.length > 0 &&
+                                projects.map(({ node }, i) => {
+                                    const {
+                                        date,
+                                        github,
+                                        external,
+                                        ios,
+                                        android,
+                                        title,
+                                        tech,
+                                        company,
+                                    } = node.frontmatter;
+                                    return (
+                                        <tr key={i} ref={el => (revealProjects.current[i] = el)}>
+                                            <td className="overline year">{`${new Date(date).getFullYear()}`}</td>
 
-                      <td className="title">{title}</td>
+                                            <td className="title">{title}</td>
 
-                      <td className="company hide-on-mobile">
-                        {company ? <span>{company}</span> : <span>—</span>}
-                      </td>
+                                            <td className="company hide-on-mobile">
+                                                {company ? <span>{company}</span> : <span>—</span>}
+                                            </td>
 
-                      <td className="tech hide-on-mobile">
-                        {tech?.length > 0 &&
-                          tech.map((item, i) => (
-                            <span key={i}>
-                              {item}
-                              {''}
-                              {i !== tech.length - 1 && <span className="separator">&middot;</span>}
-                            </span>
-                          ))}
-                      </td>
+                                            <td className="tech hide-on-mobile">
+                                                {tech?.length > 0 &&
+                                                    tech.map((item, i) => (
+                                                        <span key={i}>
+                                                            {item}
+                                                            {''}
+                                                            {i !== tech.length - 1 && <span className="separator">&middot;</span>}
+                                                        </span>
+                                                    ))}
+                                            </td>
 
-                      <td className="links">
-                        <div>
-                          {external && (
-                            <a href={external} aria-label="External Link">
-                              <Icon name="External" />
-                            </a>
-                          )}
-                          {github && (
-                            <a href={github} aria-label="GitHub Link">
-                              <Icon name="GitHub" />
-                            </a>
-                          )}
-                          {ios && (
-                            <a href={ios} aria-label="Apple App Store Link">
-                              <Icon name="AppStore" />
-                            </a>
-                          )}
-                          {android && (
-                            <a href={android} aria-label="Google Play Store Link">
-                              <Icon name="PlayStore" />
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </StyledTableContainer>
-      </main>
-    </Layout>
-  );
+                                            <td className="links">
+                                                <div>
+                                                    {external && (
+                                                        <a href={external} aria-label="External Link">
+                                                            <Icon name="External" />
+                                                        </a>
+                                                    )}
+                                                    {github && (
+                                                        <a href={github} aria-label="GitHub Link">
+                                                            <Icon name="GitHub" />
+                                                        </a>
+                                                    )}
+                                                    {ios && (
+                                                        <a href={ios} aria-label="Apple App Store Link">
+                                                            <Icon name="AppStore" />
+                                                        </a>
+                                                    )}
+                                                    {android && (
+                                                        <a href={android} aria-label="Google Play Store Link">
+                                                            <Icon name="PlayStore" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                        </tbody>
+                    </table>
+                </StyledTableContainer>
+            </main>
+        </Layout>
+    );
 };
 ArchivePage.propTypes = {
-  location: PropTypes.object.isRequired,
-  data: PropTypes.object.isRequired,
+    location: PropTypes.object.isRequired,
+    data: PropTypes.object.isRequired,
 };
 
 export default ArchivePage;
