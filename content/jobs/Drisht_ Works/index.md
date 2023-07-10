@@ -1,6 +1,6 @@
 ---
 date: '2020-10-01'
-title: 'Robotics Software Engineer Intern'
+title: 'Robotics Software Engineer'
 company: 'Drishti Works'
 location: 'Mumbai, India'
 range: 'Oct 2020 - Jun 2021'
