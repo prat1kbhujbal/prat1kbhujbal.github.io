@@ -64,7 +64,7 @@ const Hero = () => {
     const four = (
         <>
             <p>
-                College Park, Maryland, USA.
+                Chicago, IL, USA.
             </p>
         </>
     );
