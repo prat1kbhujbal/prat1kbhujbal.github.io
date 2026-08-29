@@ -135,7 +135,7 @@ const About = () => {
                 <StyledText>
                     <div>
                         <p>
-                            Hello! My name is Pratik and I am currently pursuing a Master's degree in Robotics.
+                            Hello! My name is Pratik.
 
                         </p>
                         A Roboticist interested and skills in Path planning, Computer vision, State Estimation, and Motion Control.
