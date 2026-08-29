@@ -117,6 +117,12 @@ const StyledRobot = styled.div`
     animation: visor-scan 1.2s ease-in-out infinite;
   }
 
+  /* A slower sweep while it stands there taking something in */
+  &.is-observing .scan-bar {
+    opacity: 0.6;
+    animation: visor-scan 2.6s ease-in-out infinite;
+  }
+
   &.is-asleep .bulb {
     animation: none;
     opacity: 0.2;
@@ -162,21 +168,29 @@ const MAX_SPEED = 13; // px per frame
 const STEER_EASE = 0.16; // how sharply it turns onto the next leg
 const TRACK_EASE = 0.09; // easing used for small corrections once it has arrived
 
+// Things worth stopping and having a proper look at
+const WORTH_A_LOOK = '.project-inner, .project-image, .project-content, #about .wrapper';
+
 /** What the robot makes of whatever the cursor is sitting on. */
 const readTarget = el => {
   if (!el || !el.closest) {
-    return 'none';
+    return { mode: 'none' };
+  }
+
+  const subject = el.closest(WORTH_A_LOOK);
+  if (subject) {
+    return { mode: 'observe', subject };
   }
 
   if (el.closest('img, picture, .gatsby-image-wrapper, svg[data-gatsby-image-wrapper]')) {
-    return 'scan';
+    return { mode: 'scan' };
   }
 
   if (el.closest('a, button, [role="button"]')) {
-    return 'point';
+    return { mode: 'point' };
   }
 
-  return 'none';
+  return { mode: 'none' };
 };
 
 const CursorRobot = () => {
@@ -232,6 +246,8 @@ const CursorRobot = () => {
     let swing = 0;
     let facing = 1;
     let hovering = 'none'; // what the cursor is resting on
+    let watching = null; // the element it has stopped to study
+    let chin = 0; // 0 arms down, 1 hands under the chin
     let lastMoveAt = Date.now();
     let doze = 0; // 0 awake, 1 fast asleep
     let pointRot = 0; // where the pointing arm is currently held
@@ -249,7 +265,9 @@ const CursorRobot = () => {
       target.x = e.clientX;
       target.y = e.clientY;
       lastMoveAt = Date.now();
-      hovering = readTarget(e.target);
+      const read = readTarget(e.target);
+      hovering = read.mode;
+      watching = read.subject || null;
 
       if (!hasMoved) {
         hasMoved = true;
@@ -363,11 +381,16 @@ const CursorRobot = () => {
       doze += ((wantsDoze ? 1 : 0) - doze) * DOZE_EASE;
 
       const awake = doze < 0.3;
+      const observing = settled && awake && hovering === 'observe' && !!watching;
       const scanning = settled && awake && hovering === 'scan';
       const pointing = settled && awake && hovering === 'point';
 
+      wrapper.classList.toggle('is-observing', observing);
       wrapper.classList.toggle('is-scanning', scanning);
       wrapper.classList.toggle('is-asleep', doze > 0.5);
+
+      // Settling into (or out of) the hands-under-the-chin pose
+      chin += ((observing ? 1 : 0) - chin) * 0.12;
 
       if (pointing) {
         // Turn towards the link and raise the near arm at it
@@ -379,22 +402,40 @@ const CursorRobot = () => {
         pointRot += (Math.max(Math.min(aim - 45, 80), -170) - pointRot) * 0.2;
       }
 
+      // What the eyes should follow: the thing being studied, else the cursor
+      const look = { x: target.x, y: target.y };
+      if (observing) {
+        const box = watching.getBoundingClientRect();
+        look.x = box.x + box.width / 2;
+        look.y = box.y + box.height / 2;
+        // Face it, and tip the head over as if considering the thing
+        facing = look.x > pos.x ? 1 : -1;
+      }
+
+      const tilt = lean + chin * 7;
+
       wrapper.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       body.style.transform = `translateY(${
         bounce + breathe + doze * 5
-      }px) rotate(${lean}deg) scaleX(${facing})`;
+      }px) rotate(${tilt}deg) scaleX(${facing})`;
 
       legLeft.style.transform = `rotate(${legSwing}deg)`;
       legRight.style.transform = `rotate(${-legSwing}deg)`;
-      armLeft.style.transform = `rotate(${armSwing}deg)`;
+
+      // Both hands come up under the chin while it studies something —
+      // swung right over so they rest against the face, not in the seam
+      // between head and body where they would be lost against the outline
+      const chinScale = 1 + chin * 0.06;
+      armLeft.style.transform = `rotate(${
+        armSwing * (1 - chin) - 171 * chin
+      }deg) scale(${chinScale})`;
       // The pointing arm reaches out, so it reads as a point and not a shrug
       armRight.style.transform = pointing
         ? `rotate(${pointRot}deg) scale(1.45)`
-        : `rotate(${-armSwing}deg)`;
+        : `rotate(${-armSwing * (1 - chin) + 171 * chin}deg) scale(${chinScale})`;
 
-      // Eyes stay on the cursor even when the body is flipped, and squeeze
-      // shut as it dozes off
-      const eyeAngle = Math.atan2(target.y - pos.y, target.x - pos.x);
+      // Eyes hold on whatever it is watching, and squeeze shut as it dozes off
+      const eyeAngle = Math.atan2(look.y - pos.y, look.x - pos.x);
       pupils.style.transform = `translate(${Math.cos(eyeAngle) * PUPIL_RANGE * facing}px, ${
         Math.sin(eyeAngle) * PUPIL_RANGE
       }px) scaleY(${1 - doze * 0.85})`;
