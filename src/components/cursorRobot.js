@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { usePrefersReducedMotion } from '@hooks';
+import planRoute, { MAX_WAYPOINTS } from '@utils/planRoute';
+import RobotFigure from './robotFigure';
 
 const StyledPlan = styled.svg`
   position: fixed;
@@ -97,6 +99,39 @@ const StyledRobot = styled.div`
     animation: robot-blink 2s ease-in-out infinite;
   }
 
+  /* Eyes squint shut from the middle when it dozes off */
+  .pupils {
+    transform-box: view-box;
+    transform-origin: 28px 20px;
+  }
+
+  /* A bar sweeps the visor while it looks something over */
+  .scan-bar {
+    transform-box: view-box;
+    opacity: 0;
+    transition: opacity 0.2s var(--easing);
+  }
+
+  &.is-scanning .scan-bar {
+    opacity: 0.85;
+    animation: visor-scan 1.2s ease-in-out infinite;
+  }
+
+  &.is-asleep .bulb {
+    animation: none;
+    opacity: 0.2;
+  }
+
+  @keyframes visor-scan {
+    0%,
+    100% {
+      transform: translateX(-8px);
+    }
+    50% {
+      transform: translateX(8px);
+    }
+  }
+
   @keyframes robot-blink {
     0%,
     100% {
@@ -114,8 +149,12 @@ const MAX_LEAN = 20; // deg it leans into the direction it is running
 const MAX_SWING = 38; // deg the legs swing at a full sprint
 const PUPIL_RANGE = 1.8; // px the pupils can shift inside the eyes
 
+// Reaction tuning
+const SETTLED_SPEED = 1.4; // px per frame below which it counts as standing still
+const DOZE_AFTER = 7000; // ms of a motionless cursor before it powers down
+const DOZE_EASE = 0.05; // how slowly it nods off and wakes back up
+
 // Planner tuning
-const MAX_WAYPOINTS = 6;
 const PLAN_MIN_DIST = 90; // shorter hops aren't worth planning, it just walks over
 const REPLAN_DIST = 70; // how far the goal must drift before the route is redrawn
 const ARRIVE_RADIUS = 14; // px within which a waypoint counts as reached
@@ -123,31 +162,21 @@ const MAX_SPEED = 13; // px per frame
 const STEER_EASE = 0.16; // how sharply it turns onto the next leg
 const TRACK_EASE = 0.09; // easing used for small corrections once it has arrived
 
-/**
- * Lays out a gently curved route of waypoints from `from` to `to`, so the
- * robot takes a considered path rather than a dead-straight line.
- */
-const planRoute = (from, to, bend) => {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const dist = Math.hypot(dx, dy);
-  const legs = Math.max(Math.min(Math.round(dist / 90), MAX_WAYPOINTS), 2);
-
-  // Control point pushed off to one side turns the straight line into an arc
-  const cx = from.x + dx / 2 - dy * 0.16 * bend;
-  const cy = from.y + dy / 2 + dx * 0.16 * bend;
-
-  const route = [];
-  for (let i = 1; i <= legs; i++) {
-    const t = i / legs;
-    const inv = 1 - t;
-    route.push({
-      x: inv * inv * from.x + 2 * inv * t * cx + t * t * to.x,
-      y: inv * inv * from.y + 2 * inv * t * cy + t * t * to.y,
-    });
+/** What the robot makes of whatever the cursor is sitting on. */
+const readTarget = el => {
+  if (!el || !el.closest) {
+    return 'none';
   }
 
-  return route;
+  if (el.closest('img, picture, .gatsby-image-wrapper, svg[data-gatsby-image-wrapper]')) {
+    return 'scan';
+  }
+
+  if (el.closest('a, button, [role="button"]')) {
+    return 'point';
+  }
+
+  return 'none';
 };
 
 const CursorRobot = () => {
@@ -202,6 +231,10 @@ const CursorRobot = () => {
     let stride = 0;
     let swing = 0;
     let facing = 1;
+    let hovering = 'none'; // what the cursor is resting on
+    let lastMoveAt = Date.now();
+    let doze = 0; // 0 awake, 1 fast asleep
+    let pointRot = 0; // where the pointing arm is currently held
     let hasMoved = false;
     let rafId = null;
 
@@ -215,6 +248,8 @@ const CursorRobot = () => {
     const onMouseMove = e => {
       target.x = e.clientX;
       target.y = e.clientY;
+      lastMoveAt = Date.now();
+      hovering = readTarget(e.target);
 
       if (!hasMoved) {
         hasMoved = true;
@@ -321,21 +356,48 @@ const CursorRobot = () => {
       const bounce = -Math.abs(Math.sin(stride)) * swing * 0.06;
       const breathe = Math.sin(Date.now() / 420) * Math.max(1.6 - swing * 0.1, 0);
 
+      // Once it has caught up it can take an interest in whatever is under
+      // the cursor — and nod off if the cursor stops moving altogether
+      const settled = speed < SETTLED_SPEED;
+      const wantsDoze = Date.now() - lastMoveAt > DOZE_AFTER && settled;
+      doze += ((wantsDoze ? 1 : 0) - doze) * DOZE_EASE;
+
+      const awake = doze < 0.3;
+      const scanning = settled && awake && hovering === 'scan';
+      const pointing = settled && awake && hovering === 'point';
+
+      wrapper.classList.toggle('is-scanning', scanning);
+      wrapper.classList.toggle('is-asleep', doze > 0.5);
+
+      if (pointing) {
+        // Turn towards the link and raise the near arm at it
+        facing = target.x > pos.x ? 1 : -1;
+        const shoulderX = pos.x + 9 * facing;
+        const shoulderY = pos.y + 6;
+        const aim =
+          (Math.atan2(target.y - shoulderY, (target.x - shoulderX) * facing) * 180) / Math.PI;
+        pointRot += (Math.max(Math.min(aim - 45, 80), -170) - pointRot) * 0.2;
+      }
+
       wrapper.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       body.style.transform = `translateY(${
-        bounce + breathe
+        bounce + breathe + doze * 5
       }px) rotate(${lean}deg) scaleX(${facing})`;
 
       legLeft.style.transform = `rotate(${legSwing}deg)`;
       legRight.style.transform = `rotate(${-legSwing}deg)`;
       armLeft.style.transform = `rotate(${armSwing}deg)`;
-      armRight.style.transform = `rotate(${-armSwing}deg)`;
+      // The pointing arm reaches out, so it reads as a point and not a shrug
+      armRight.style.transform = pointing
+        ? `rotate(${pointRot}deg) scale(1.45)`
+        : `rotate(${-armSwing}deg)`;
 
-      // Eyes stay on the cursor even when the body is flipped
+      // Eyes stay on the cursor even when the body is flipped, and squeeze
+      // shut as it dozes off
       const eyeAngle = Math.atan2(target.y - pos.y, target.x - pos.x);
       pupils.style.transform = `translate(${Math.cos(eyeAngle) * PUPIL_RANGE * facing}px, ${
         Math.sin(eyeAngle) * PUPIL_RANGE
-      }px)`;
+      }px) scaleY(${1 - doze * 0.85})`;
 
       rafId = window.requestAnimationFrame(tick);
     };
@@ -381,99 +443,17 @@ const CursorRobot = () => {
       </StyledPlan>
 
       <StyledRobot ref={wrapperRef} aria-hidden="true">
-        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-          <g ref={bodyRef} className="robot-body">
-            {/* legs — swing from the hips */}
-            <g ref={legLeftRef} className="limb" style={{ transformOrigin: '24px 43px' }}>
-              <path
-                d="M24 43 L24 50"
-                stroke="var(--green)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M24 50 L20 51.5"
-                stroke="var(--green)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-            </g>
-            <g ref={legRightRef} className="limb" style={{ transformOrigin: '32px 43px' }}>
-              <path
-                d="M32 43 L32 50"
-                stroke="var(--green)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-              <path
-                d="M32 50 L36 51.5"
-                stroke="var(--green)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-            </g>
-
-            {/* antenna */}
-            <line x1="28" y1="10" x2="28" y2="4" stroke="var(--green)" strokeWidth="1.6" />
-            <circle className="bulb" cx="28" cy="3" r="2.4" fill="var(--green)" />
-
-            {/* head */}
-            <rect
-              x="14"
-              y="10"
-              width="28"
-              height="20"
-              rx="8"
-              fill="var(--light-navy)"
-              stroke="var(--green)"
-              strokeWidth="1.8"
-            />
-
-            {/* visor */}
-            <rect x="18" y="15" width="20" height="10" rx="5" fill="var(--navy)" />
-
-            {/* eyes */}
-            <g ref={pupilsRef}>
-              <circle cx="24" cy="20" r="2.6" fill="var(--green)" />
-              <circle cx="32" cy="20" r="2.6" fill="var(--green)" />
-            </g>
-
-            {/* ears */}
-            <rect x="10.5" y="17" width="3.5" height="7" rx="1.7" fill="var(--green)" />
-            <rect x="42" y="17" width="3.5" height="7" rx="1.7" fill="var(--green)" />
-
-            {/* body */}
-            <rect
-              x="19"
-              y="31"
-              width="18"
-              height="12"
-              rx="4"
-              fill="var(--light-navy)"
-              stroke="var(--green)"
-              strokeWidth="1.8"
-            />
-            <circle cx="28" cy="37" r="2" fill="var(--green)" opacity="0.9" />
-
-            {/* arms — swing from the shoulders, opposite the legs */}
-            <g ref={armLeftRef} className="limb" style={{ transformOrigin: '19px 34px' }}>
-              <path
-                d="M19 34 L14 39"
-                stroke="var(--green)"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-            </g>
-            <g ref={armRightRef} className="limb" style={{ transformOrigin: '37px 34px' }}>
-              <path
-                d="M37 34 L42 39"
-                stroke="var(--green)"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-            </g>
-          </g>
-        </svg>
+        <RobotFigure
+          id="cursor-robot"
+          parts={{
+            body: bodyRef,
+            pupils: pupilsRef,
+            legLeft: legLeftRef,
+            legRight: legRightRef,
+            armLeft: armLeftRef,
+            armRight: armRightRef,
+          }}
+        />
       </StyledRobot>
     </>
   );

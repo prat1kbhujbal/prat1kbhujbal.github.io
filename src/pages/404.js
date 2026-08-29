@@ -5,7 +5,7 @@ import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { navDelay } from '@utils';
-import { Layout } from '@components';
+import { Layout, LostRobot } from '@components';
 import { usePrefersReducedMotion } from '@hooks';
 
 const StyledMainContainer = styled.main`
@@ -21,6 +21,42 @@ const StyledTitle = styled.h1`
 const StyledSubtitle = styled.h2`
   font-size: clamp(30px, 5vw, 50px);
   font-weight: 400;
+`;
+const StyledLog = styled.ul`
+  ${({ theme }) => theme.mixins.resetList};
+  margin: 20px 0 0;
+  color: var(--slate);
+  font-family: var(--font-mono);
+  font-size: var(--fz-xs);
+  text-align: left;
+
+  li {
+    margin: 6px 0;
+
+    &:before {
+      content: '>';
+      margin-right: 10px;
+      color: var(--green);
+    }
+  }
+
+  .ok {
+    color: var(--green);
+  }
+
+  .caret {
+    display: inline-block;
+    width: 8px;
+    background-color: var(--green);
+    animation: caret-blink 1s step-end infinite;
+    color: transparent;
+  }
+
+  @keyframes caret-blink {
+    50% {
+      opacity: 0;
+    }
+  }
 `;
 const StyledHomeButton = styled(Link)`
   ${({ theme }) => theme.mixins.bigButton};
@@ -40,16 +76,30 @@ const NotFoundPage = ({ location }) => {
     return () => clearTimeout(timeout);
   }, []);
 
+  const requested = location.pathname && location.pathname !== '/' ? location.pathname : '/here';
+
   const content = (
     <StyledMainContainer className="fillHeight">
       <StyledTitle>404</StyledTitle>
-      <StyledSubtitle>Page Not Found</StyledSubtitle>
+      <StyledSubtitle>Path not found</StyledSubtitle>
+
+      <StyledLog>
+        <li>
+          planner: no route to <span className="ok">{requested}</span>
+        </li>
+        <li>
+          replanning<span className="caret">.</span>
+        </li>
+      </StyledLog>
+
+      <LostRobot />
+
       <StyledHomeButton to="/">Go Home</StyledHomeButton>
     </StyledMainContainer>
   );
 
   return (
-    <Layout location={location}>
+    <Layout location={location} showCursorRobot={false}>
       <Helmet title="Page Not Found" />
 
       {prefersReducedMotion ? (

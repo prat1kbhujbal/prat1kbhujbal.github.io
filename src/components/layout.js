@@ -11,7 +11,7 @@ const StyledContent = styled.div`
   min-height: 100vh;
 `;
 
-const Layout = ({ children, location }) => {
+const Layout = ({ children, location, showCursorRobot = true }) => {
   const isHome = location.pathname === '/';
   const [isLoading, setIsLoading] = useState(isHome);
 
@@ -65,7 +65,7 @@ const Layout = ({ children, location }) => {
             <Loader finishLoading={() => setIsLoading(false)} />
           ) : (
             <StyledContent>
-              <CursorRobot />
+              {showCursorRobot && <CursorRobot />}
               <Nav isHome={isHome} />
               <Social isHome={isHome} />
               <Email isHome={isHome} />
@@ -85,6 +85,7 @@ const Layout = ({ children, location }) => {
 Layout.propTypes = {
   children: PropTypes.node.isRequired,
   location: PropTypes.object.isRequired,
+  showCursorRobot: PropTypes.bool,
 };
 
 export default Layout;
