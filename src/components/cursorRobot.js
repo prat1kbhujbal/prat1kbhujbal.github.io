@@ -160,6 +160,14 @@ const SETTLED_SPEED = 1.4; // px per frame below which it counts as standing sti
 const DOZE_AFTER = 7000; // ms of a motionless cursor before it powers down
 const DOZE_EASE = 0.05; // how slowly it nods off and wakes back up
 
+// Escort tuning — when a nav link is clicked the robot leads the way
+const ESCORT_SPEED = 22; // px per frame, faster than its cursor chase
+const ESCORT_MARGIN = 44; // how far inside the viewport edges it will run
+const ESCORT_ARRIVED = 26; // px from the heading that counts as arrived
+const ESCORT_HOLD = 1500; // ms it stands on the heading before letting go
+const JAB_RATE = 2.4; // jabs per second — "this, this, this"
+const ESCORT_TIMEOUT = 6000; // give up if the page never settles
+
 // Planner tuning
 const PLAN_MIN_DIST = 90; // shorter hops aren't worth planning, it just walks over
 const REPLAN_DIST = 70; // how far the goal must drift before the route is redrawn
@@ -252,6 +260,12 @@ const CursorRobot = () => {
     let doze = 0; // 0 awake, 1 fast asleep
     let pointRot = 0; // where the pointing arm is currently held
     let hasMoved = false;
+    let escortEl = null; // heading it is currently leading the way to
+    let escortStarted = 0;
+    let escortArrivedAt = 0;
+    let escortLastTop = null;
+    let escortAim = null; // the heading itself, which it jabs a finger at
+    let jabExtend = 1;
     let rafId = null;
 
     const clearRoute = () => {
@@ -277,6 +291,38 @@ const CursorRobot = () => {
       }
     };
 
+    // Any link pointing at a section on this page turns into an escort:
+    // the robot breaks off and runs ahead to the heading you asked for
+    const onClick = e => {
+      if (!e.target.closest) {
+        return;
+      }
+
+      const link = e.target.closest('a[href*="#"]');
+      if (!link) {
+        return;
+      }
+
+      const url = new URL(link.href, window.location.href);
+      if (url.pathname !== window.location.pathname) {
+        return;
+      }
+
+      const section = url.hash.length > 1 && document.getElementById(url.hash.slice(1));
+      if (!section) {
+        return;
+      }
+
+      // Sections are page-tall; lead the way to their heading instead
+      escortEl = section.querySelector('h1, h2, h3') || section;
+      escortStarted = Date.now();
+      escortArrivedAt = 0;
+      escortLastTop = null;
+      clearRoute();
+      wrapper.classList.add('is-visible');
+      plan.style.opacity = '1';
+    };
+
     const onMouseLeave = () => {
       wrapper.classList.remove('is-visible');
       clearRoute();
@@ -284,17 +330,54 @@ const CursorRobot = () => {
     const onMouseEnter = () => hasMoved && wrapper.classList.add('is-visible');
 
     const tick = () => {
+      const now = Date.now();
+
+      // While escorting, the goal is the heading itself — kept inside the
+      // viewport so the robot runs ahead of the scroll rather than off-screen
+      let escortGoal = null;
+      if (escortEl) {
+        const box = escortEl.getBoundingClientRect();
+        // It stands just to the side of the heading and points at the text
+        escortAim = { x: box.left + 24, y: box.top + box.height / 2 };
+        escortGoal = {
+          x: Math.min(Math.max(box.left - 34, ESCORT_MARGIN), window.innerWidth - ESCORT_MARGIN),
+          y: Math.min(
+            Math.max(box.top + box.height / 2, ESCORT_MARGIN),
+            window.innerHeight - ESCORT_MARGIN,
+          ),
+        };
+
+        const gap = Math.hypot(escortGoal.x - pos.x, escortGoal.y - pos.y);
+        // The scroll has finished once the heading stops moving under us
+        const settled = escortLastTop !== null && Math.abs(box.top - escortLastTop) < 0.5;
+        escortLastTop = box.top;
+
+        if (gap < ESCORT_ARRIVED && settled && !escortArrivedAt) {
+          escortArrivedAt = now; // planted on the heading, hold a beat
+        }
+
+        if (
+          (escortArrivedAt && now - escortArrivedAt > ESCORT_HOLD) ||
+          now - escortStarted > ESCORT_TIMEOUT
+        ) {
+          escortEl = null;
+          escortArrivedAt = 0;
+          escortAim = null;
+          plan.style.opacity = '0';
+        }
+      }
+
       // The goal is a point STANDOFF px short of the cursor, so the robot
       // pulls up beside the pointer instead of standing on top of it
       const dx = target.x - pos.x;
       const dy = target.y - pos.y;
       const dist = Math.hypot(dx, dy) || 1;
       const reach = Math.max(dist - STANDOFF, 0);
-      const goal = { x: pos.x + (dx / dist) * reach, y: pos.y + (dy / dist) * reach };
+      const goal = escortGoal || { x: pos.x + (dx / dist) * reach, y: pos.y + (dy / dist) * reach };
 
       // Plan a fresh route whenever the goal has moved somewhere new
       const goalDrift = planGoal ? Math.hypot(goal.x - planGoal.x, goal.y - planGoal.y) : Infinity;
-      if (reach > PLAN_MIN_DIST && goalDrift > REPLAN_DIST) {
+      if (!escortEl && reach > PLAN_MIN_DIST && goalDrift > REPLAN_DIST) {
         // Only pick a new side to curve towards when setting off afresh —
         // mid-chase replans keep the same arc so the route doesn't flip about
         if (!planGoal) {
@@ -306,7 +389,13 @@ const CursorRobot = () => {
         plan.style.opacity = '1';
       }
 
-      if (leg < waypoints.length) {
+      if (escortEl) {
+        // Sprint for the heading, easing off as it gets there
+        const legDist = Math.hypot(goal.x - pos.x, goal.y - pos.y) || 1;
+        const speed = Math.min(legDist * 0.22, ESCORT_SPEED);
+        vel.x += (((goal.x - pos.x) / legDist) * speed - vel.x) * 0.2;
+        vel.y += (((goal.y - pos.y) / legDist) * speed - vel.y) * 0.2;
+      } else if (leg < waypoints.length) {
         // Walk the route: head for the next waypoint, tick it off on arrival
         const aim = waypoints[leg];
         const legDist = Math.hypot(aim.x - pos.x, aim.y - pos.y);
@@ -332,7 +421,17 @@ const CursorRobot = () => {
       pos.y += vel.y;
 
       // Draw the part of the route it still has to walk
-      if (leg < waypoints.length) {
+      if (escortEl) {
+        route.setAttribute(
+          'd',
+          `M${pos.x.toFixed(1)} ${pos.y.toFixed(1)}L${goal.x.toFixed(1)} ${goal.y.toFixed(1)}`,
+        );
+        dots.forEach(dot => dot && (dot.style.display = 'none'));
+        goalMarker.setAttribute(
+          'transform',
+          `translate(${goal.x.toFixed(1)} ${goal.y.toFixed(1)})`,
+        );
+      } else if (leg < waypoints.length) {
         const ahead = waypoints.slice(leg);
         const legs = ahead.map(p => `L${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('');
         route.setAttribute('d', `M${pos.x.toFixed(1)} ${pos.y.toFixed(1)}${legs}`);
@@ -376,8 +475,8 @@ const CursorRobot = () => {
 
       // Once it has caught up it can take an interest in whatever is under
       // the cursor — and nod off if the cursor stops moving altogether
-      const settled = speed < SETTLED_SPEED;
-      const wantsDoze = Date.now() - lastMoveAt > DOZE_AFTER && settled;
+      const settled = speed < SETTLED_SPEED && !escortEl;
+      const wantsDoze = !escortEl && now - lastMoveAt > DOZE_AFTER && settled;
       doze += ((wantsDoze ? 1 : 0) - doze) * DOZE_EASE;
 
       const awake = doze < 0.3;
@@ -392,7 +491,25 @@ const CursorRobot = () => {
       // Settling into (or out of) the hands-under-the-chin pose
       chin += ((observing ? 1 : 0) - chin) * 0.12;
 
-      if (pointing) {
+      // Arrived at the heading it was asked for: jab a finger at it a few
+      // times — this one, this one — rather than just staring
+      const jabbing = !!(escortArrivedAt && escortAim);
+
+      if (jabbing) {
+        facing = escortAim.x > pos.x ? 1 : -1;
+        const shoulderX = pos.x + 9 * facing;
+        const shoulderY = pos.y + 6;
+        const aim =
+          (Math.atan2(escortAim.y - shoulderY, (escortAim.x - shoulderX) * facing) * 180) / Math.PI;
+        pointRot += (Math.max(Math.min(aim - 45, 80), -170) - pointRot) * 0.35;
+
+        // Only the positive half of the wave, so it pokes out and pulls back
+        const beat = Math.max(
+          Math.sin(((now - escortArrivedAt) / 1000) * Math.PI * 2 * JAB_RATE),
+          0,
+        );
+        jabExtend = 1.15 + beat * 0.5;
+      } else if (pointing) {
         // Turn towards the link and raise the near arm at it
         facing = target.x > pos.x ? 1 : -1;
         const shoulderX = pos.x + 9 * facing;
@@ -400,10 +517,12 @@ const CursorRobot = () => {
         const aim =
           (Math.atan2(target.y - shoulderY, (target.x - shoulderX) * facing) * 180) / Math.PI;
         pointRot += (Math.max(Math.min(aim - 45, 80), -170) - pointRot) * 0.2;
+        jabExtend = 1.45;
       }
 
       // What the eyes should follow: the thing being studied, else the cursor
-      const look = { x: target.x, y: target.y };
+      const look =
+        escortAim || (escortEl ? { x: goal.x, y: goal.y } : { x: target.x, y: target.y });
       if (observing) {
         const box = watching.getBoundingClientRect();
         look.x = box.x + box.width / 2;
@@ -430,9 +549,10 @@ const CursorRobot = () => {
         armSwing * (1 - chin) - 171 * chin
       }deg) scale(${chinScale})`;
       // The pointing arm reaches out, so it reads as a point and not a shrug
-      armRight.style.transform = pointing
-        ? `rotate(${pointRot}deg) scale(1.45)`
-        : `rotate(${-armSwing * (1 - chin) + 171 * chin}deg) scale(${chinScale})`;
+      armRight.style.transform =
+        pointing || jabbing
+          ? `rotate(${pointRot}deg) scale(${jabExtend})`
+          : `rotate(${-armSwing * (1 - chin) + 171 * chin}deg) scale(${chinScale})`;
 
       // Eyes hold on whatever it is watching, and squeeze shut as it dozes off
       const eyeAngle = Math.atan2(look.y - pos.y, look.x - pos.x);
@@ -444,6 +564,7 @@ const CursorRobot = () => {
     };
 
     window.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('click', onClick);
     document.documentElement.addEventListener('mouseleave', onMouseLeave);
     document.documentElement.addEventListener('mouseenter', onMouseEnter);
     rafId = window.requestAnimationFrame(tick);
@@ -451,6 +572,7 @@ const CursorRobot = () => {
     return () => {
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('click', onClick);
       document.documentElement.removeEventListener('mouseleave', onMouseLeave);
       document.documentElement.removeEventListener('mouseenter', onMouseEnter);
     };
