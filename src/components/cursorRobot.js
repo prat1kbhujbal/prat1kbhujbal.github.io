@@ -1,8 +1,102 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { usePrefersReducedMotion } from '@hooks';
-import planRoute, { MAX_WAYPOINTS } from '@utils/planRoute';
+import { CELL, LETHAL, INSCRIBED_COST, buildCostmap, isFree, planPath } from '@utils/costmap';
 import RobotFigure from './robotFigure';
+
+const StyledCostmap = styled.canvas`
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9997;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+
+  @media (hover: none), (pointer: coarse) {
+    display: none;
+  }
+`;
+
+const StyledToggle = styled.button`
+  position: fixed;
+  left: 96px;
+  bottom: 24px;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--green);
+  border-radius: var(--border-radius);
+  background-color: rgba(10, 25, 47, 0.85);
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: var(--fz-xxs);
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--green-tint);
+    outline: none;
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--light-slate);
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  .obstacle {
+    background-color: rgba(100, 255, 218, 0.5);
+  }
+
+  .inflation {
+    background-color: rgba(100, 255, 218, 0.18);
+  }
+
+  .explored {
+    width: 4px;
+    height: 4px;
+    background-color: rgba(87, 203, 255, 0.9);
+  }
+
+  .path {
+    width: 10px;
+    height: 2px;
+    background-color: rgba(245, 125, 255, 0.9);
+  }
+
+  .stats {
+    color: var(--slate);
+    white-space: pre-line;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  @media (max-width: 1080px) {
+    left: 64px;
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    display: none;
+  }
+`;
 
 const StyledPlan = styled.svg`
   position: fixed;
@@ -169,15 +263,126 @@ const JAB_RATE = 2.4; // jabs per second — "this, this, this"
 const ESCORT_TIMEOUT = 6000; // give up if the page never settles
 
 // Planner tuning
-const PLAN_MIN_DIST = 90; // shorter hops aren't worth planning, it just walks over
-const REPLAN_DIST = 70; // how far the goal must drift before the route is redrawn
+const PLAN_MIN_DIST = 90; // routes shorter than this aren't drawn, it just walks over
+const REPLAN_DIST = 28; // how far the goal must drift before the route is redrawn
+const REPLAN_EVERY = 60; // ms between replans, so a fast cursor can't flood the planner
+const MAP_STALE_AFTER = 500; // ms before the costmap is rebuilt even without a scroll
 const ARRIVE_RADIUS = 14; // px within which a waypoint counts as reached
 const MAX_SPEED = 13; // px per frame
 const STEER_EASE = 0.16; // how sharply it turns onto the next leg
 const TRACK_EASE = 0.09; // easing used for small corrections once it has arrived
+const MAX_WAYPOINTS = 16; // route corners marked on the overlay
 
 // Things worth stopping and having a proper look at
 const WORTH_A_LOOK = '.project-inner, .project-image, .project-content, #about .wrapper';
+
+// What it treats as solid when planning: headings, cards and images
+const OBSTACLES =
+  'h1, h2, h3, .project-inner, .project-image, .project-description, .tile, .gatsby-image-wrapper, video';
+
+const PLANNER_KEY = 'cursor-robot-planner';
+
+/** Bounding boxes of everything on screen the robot should walk around. */
+const readObstacles = () => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return Array.from(document.querySelectorAll(OBSTACLES))
+    .map(el => el.getBoundingClientRect())
+    .filter(
+      box =>
+        box.width > 0 &&
+        box.height > 0 &&
+        box.bottom > 0 &&
+        box.right > 0 &&
+        box.top < height &&
+        box.left < width,
+    );
+};
+
+/**
+ * Paints the costmap, the cells A* explored and its raw cell path onto the
+ * overlay canvas, and reports the search in `stats`. A null snapshot clears it.
+ */
+const drawPlanner = (canvas, snapshot, stats) => {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr; // resizing also wipes it
+  canvas.height = window.innerHeight * dpr;
+
+  if (!snapshot) {
+    stats.textContent = '';
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const { map, result } = snapshot;
+
+  // One cell per square, with a 1px gap so the grid itself shows
+  for (let i = 0; i < map.cost.length; i++) {
+    const c = map.cost[i];
+    if (!c) {
+      continue;
+    }
+    // Kept faint so the content under the map still reads
+    if (c === LETHAL) {
+      ctx.fillStyle = 'rgba(100, 255, 218, 0.09)';
+    } else if (c === INSCRIBED_COST) {
+      ctx.fillStyle = 'rgba(100, 255, 218, 0.06)';
+    } else {
+      ctx.fillStyle = `rgba(100, 255, 218, ${((c / INSCRIBED_COST) * 0.05).toFixed(3)})`;
+    }
+    ctx.fillRect((i % map.cols) * CELL, Math.floor(i / map.cols) * CELL, CELL - 1, CELL - 1);
+  }
+
+  if (!result) {
+    stats.textContent = 'A* · nowhere free to stand';
+    return;
+  }
+
+  ctx.fillStyle = 'rgba(87, 203, 255, 0.55)';
+  for (let i = 0; i < result.explored.length; i++) {
+    if (result.explored[i]) {
+      ctx.fillRect(
+        (i % map.cols) * CELL + CELL / 2 - 1,
+        Math.floor(i / map.cols) * CELL + CELL / 2 - 1,
+        2,
+        2,
+      );
+    }
+  }
+
+  if (result.cells) {
+    ctx.strokeStyle = 'rgba(245, 125, 255, 0.75)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    result.cells.forEach((i, k) => {
+      const x = (i % map.cols) * CELL + CELL / 2;
+      const y = Math.floor(i / map.cols) * CELL + CELL / 2;
+      if (k) {
+        ctx.lineTo(x, y);
+      } else {
+        ctx.moveTo(x, y);
+      }
+    });
+    ctx.stroke();
+  }
+
+  stats.textContent = `A* · ${map.cols}×${
+    map.rows
+  } grid\n${result.expanded.toLocaleString()} nodes · ${result.ms.toFixed(1)} ms${
+    result.path ? '' : '\nno path'
+  }`;
+};
+
+const routeLength = (from, points) => {
+  let length = 0;
+  let prev = from;
+  points.forEach(p => {
+    length += Math.hypot(p.x - prev.x, p.y - prev.y);
+    prev = p;
+  });
+  return length;
+};
 
 /** What the robot makes of whatever the cursor is sitting on. */
 const readTarget = el => {
@@ -213,12 +418,36 @@ const CursorRobot = () => {
   const legRightRef = useRef(null);
   const armLeftRef = useRef(null);
   const armRightRef = useRef(null);
+  const canvasRef = useRef(null);
+  const statsRef = useRef(null);
+  const snapshotRef = useRef(null); // the latest costmap and search, for the overlay
+  const showPlannerRef = useRef(false);
   const prefersReducedMotion = usePrefersReducedMotion();
+  // Whether the costmap overlay is on, remembered between visits
+  const [showPlanner, setShowPlanner] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem(PLANNER_KEY) === 'on';
+    } catch (e) {
+      return false;
+    }
+  });
   // The server renders nothing, so the first client render has to match it —
   // otherwise the extra node throws off hydration of the whole layout
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => setIsMounted(true), []);
+
+  useEffect(() => {
+    showPlannerRef.current = showPlanner;
+    try {
+      window.localStorage.setItem(PLANNER_KEY, showPlanner ? 'on' : 'off');
+    } catch (e) {
+      // Storage blocked: the toggle still works, it just won't be remembered
+    }
+    if (canvasRef.current) {
+      drawPlanner(canvasRef.current, showPlanner ? snapshotRef.current : null, statsRef.current);
+    }
+  }, [showPlanner, isMounted]);
 
   useEffect(() => {
     if (!isMounted || prefersReducedMotion) {
@@ -241,6 +470,8 @@ const CursorRobot = () => {
     const legRight = legRightRef.current;
     const armLeft = armLeftRef.current;
     const armRight = armRightRef.current;
+    const canvas = canvasRef.current;
+    const stats = statsRef.current;
 
     const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const pos = { x: target.x, y: target.y };
@@ -248,7 +479,11 @@ const CursorRobot = () => {
     let waypoints = []; // the route it is currently walking
     let leg = 0; // which waypoint it is heading for
     let planGoal = null; // where the current route was aimed
-    let bend = 1; // which way the next route curves
+    let rest = null; // where the planner said it can actually stand
+    let costmap = null;
+    let mapBuiltAt = 0;
+    let mapDirty = true; // the page has scrolled or resized under the costmap
+    let lastPlanAt = 0;
     let lean = 0;
     let stride = 0;
     let swing = 0;
@@ -268,11 +503,48 @@ const CursorRobot = () => {
     let jabExtend = 1;
     let rafId = null;
 
-    const clearRoute = () => {
+    const endRoute = () => {
       waypoints = [];
       leg = 0;
-      planGoal = null;
       plan.style.opacity = '0';
+    };
+
+    const clearRoute = () => {
+      endRoute();
+      planGoal = null;
+    };
+
+    // Rebuild the costmap if the page has moved, then search it for a route
+    // from where the robot stands to the goal
+    const replan = (goal, now) => {
+      if (mapDirty || now - mapBuiltAt > MAP_STALE_AFTER) {
+        costmap = buildCostmap(readObstacles(), window.innerWidth, window.innerHeight);
+        mapBuiltAt = now;
+        mapDirty = false;
+      }
+      lastPlanAt = now;
+      planGoal = { ...goal };
+
+      const result = planPath(costmap, pos, goal);
+      snapshotRef.current = { map: costmap, result };
+      if (showPlannerRef.current) {
+        drawPlanner(canvas, snapshotRef.current, stats);
+      }
+
+      if (result && result.path) {
+        waypoints = result.path;
+        rest = result.goal;
+      } else {
+        // Boxed in with no way through: walk straight there rather than freeze
+        waypoints = [{ ...goal }];
+        rest = null;
+      }
+      leg = 0;
+      plan.style.opacity = routeLength(pos, waypoints) > PLAN_MIN_DIST ? '1' : '0';
+    };
+
+    const onLayoutChange = () => {
+      mapDirty = true;
     };
 
     const onMouseMove = e => {
@@ -375,18 +647,16 @@ const CursorRobot = () => {
       const reach = Math.max(dist - STANDOFF, 0);
       const goal = escortGoal || { x: pos.x + (dx / dist) * reach, y: pos.y + (dy / dist) * reach };
 
-      // Plan a fresh route whenever the goal has moved somewhere new
+      // Plan a fresh route whenever the goal has moved somewhere new, or the
+      // page has scrolled and the obstacles with it
       const goalDrift = planGoal ? Math.hypot(goal.x - planGoal.x, goal.y - planGoal.y) : Infinity;
-      if (!escortEl && reach > PLAN_MIN_DIST && goalDrift > REPLAN_DIST) {
-        // Only pick a new side to curve towards when setting off afresh —
-        // mid-chase replans keep the same arc so the route doesn't flip about
-        if (!planGoal) {
-          bend = -bend;
-        }
-        waypoints = planRoute(pos, goal, bend);
-        planGoal = { ...goal };
-        leg = 0;
-        plan.style.opacity = '1';
+      if (
+        !escortEl &&
+        hasMoved &&
+        now - lastPlanAt > REPLAN_EVERY &&
+        (goalDrift > REPLAN_DIST || mapDirty)
+      ) {
+        replan(goal, now);
       }
 
       if (escortEl) {
@@ -403,18 +673,20 @@ const CursorRobot = () => {
         if (legDist < ARRIVE_RADIUS) {
           leg += 1;
           if (leg >= waypoints.length) {
-            clearRoute();
+            endRoute();
           }
         } else {
-          const remaining = legDist + (waypoints.length - 1 - leg) * 90;
+          const remaining = legDist + routeLength(aim, waypoints.slice(leg + 1));
           const speed = Math.min(remaining * 0.12, MAX_SPEED);
           vel.x += (((aim.x - pos.x) / legDist) * speed - vel.x) * STEER_EASE;
           vel.y += (((aim.y - pos.y) / legDist) * speed - vel.y) * STEER_EASE;
         }
       } else {
-        // No route left — just keep station next to the cursor
-        vel.x = (goal.x - pos.x) * TRACK_EASE;
-        vel.y = (goal.y - pos.y) * TRACK_EASE;
+        // No route left — keep station next to the cursor, or at the edge of
+        // whatever the cursor is resting on if that spot is inside an obstacle
+        const station = !rest || (costmap && isFree(costmap, goal)) ? goal : rest;
+        vel.x = (station.x - pos.x) * TRACK_EASE;
+        vel.y = (station.y - pos.y) * TRACK_EASE;
       }
 
       pos.x += vel.x;
@@ -447,9 +719,10 @@ const CursorRobot = () => {
           }
         });
 
+        const stop = rest || planGoal;
         goalMarker.setAttribute(
           'transform',
-          `translate(${planGoal.x.toFixed(1)} ${planGoal.y.toFixed(1)})`,
+          `translate(${stop.x.toFixed(1)} ${stop.y.toFixed(1)})`,
         );
       }
 
@@ -567,10 +840,14 @@ const CursorRobot = () => {
     document.addEventListener('click', onClick);
     document.documentElement.addEventListener('mouseleave', onMouseLeave);
     document.documentElement.addEventListener('mouseenter', onMouseEnter);
+    window.addEventListener('scroll', onLayoutChange, { passive: true });
+    window.addEventListener('resize', onLayoutChange);
     rafId = window.requestAnimationFrame(tick);
 
     return () => {
       window.cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onLayoutChange);
+      window.removeEventListener('resize', onLayoutChange);
       window.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('click', onClick);
       document.documentElement.removeEventListener('mouseleave', onMouseLeave);
@@ -584,6 +861,8 @@ const CursorRobot = () => {
 
   return (
     <>
+      <StyledCostmap ref={canvasRef} aria-hidden="true" />
+
       <StyledPlan ref={planRef} aria-hidden="true">
         <path ref={routeRef} className="route" d="" />
         {Array.from({ length: MAX_WAYPOINTS }).map((_, i) => (
@@ -618,6 +897,35 @@ const CursorRobot = () => {
           }}
         />
       </StyledRobot>
+
+      <StyledToggle
+        type="button"
+        aria-pressed={showPlanner}
+        title="Show the costmap and A* search the robot plans its route with"
+        onClick={() => setShowPlanner(on => !on)}>
+        <span>{showPlanner ? 'hide' : 'show'} planner</span>
+        {showPlanner && (
+          <span className="legend">
+            <span>
+              <i className="swatch obstacle" />
+              obstacle
+            </span>
+            <span>
+              <i className="swatch inflation" />
+              inflation
+            </span>
+            <span>
+              <i className="swatch explored" />
+              explored
+            </span>
+            <span>
+              <i className="swatch path" />
+              A* path
+            </span>
+          </span>
+        )}
+        <span ref={statsRef} className="stats" />
+      </StyledToggle>
     </>
   );
 };

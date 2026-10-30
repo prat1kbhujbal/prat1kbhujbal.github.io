@@ -4,10 +4,9 @@ module.exports = {
     siteMetadata: {
         title: 'Pratik Bhujbal',
         description:
-            ' ',
+            'Pratik Bhujbal is a robotics engineer working on navigation, planning and autonomy for real-world robots.',
         siteUrl: 'https://prat1kbhujbal.github.io',
         image: '/images/og.png',
-        twitterUsername: '@ ',
     },
     plugins: [
         `gatsby-plugin-react-helmet`,
@@ -49,13 +48,6 @@ module.exports = {
             options: {
                 name: 'content',
                 path: `${__dirname}/content/`,
-            },
-        },
-        {
-            resolve: `gatsby-source-filesystem`,
-            options: {
-                name: `posts`,
-                path: `${__dirname}/content/posts`,
             },
         },
         {
